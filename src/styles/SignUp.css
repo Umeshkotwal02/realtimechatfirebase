@@ -1,0 +1,106 @@
+/* Overall container */
+.signup-container {
+  display: flex;
+  flex-direction: row;
+  height: 100vh !important;
+}
+
+/* Left Section: Background with overlay */
+.signup-left {
+  position: relative;
+  background-image: url('../../public/images/cover-img-2.png');
+  background-size: cover;
+  background-position: center;
+  filter: brightness(0.6);
+  height: 100%;
+}
+
+.overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  text-align: center;
+  font-family: 'Urbanist', sans-serif;
+  z-index: 2;
+}
+
+.overlay h2 {
+  font-size: 3rem;
+  font-weight: bold;
+  text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.7);
+}
+
+.overlay p {
+  font-size: 1.25rem;
+  text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.5);
+}
+
+/* Right Section: Form styling */
+.signup-right {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f7f7f7;
+  height: 100%;
+  padding: 20px;
+}
+
+.signup-box {
+  background: #ffffff;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.signup-box h2 {
+  font-family: 'Urbanist', sans-serif;
+  color: #333;
+  font-size: 2rem;
+  margin-bottom: 20px;
+}
+
+.form-control {
+  border-radius: 5px;
+  margin-bottom: 15px;
+}
+
+.signup-btn {
+  background-color: #007bff;
+  border: none;
+  font-size: 1.1rem;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.signup-btn:hover {
+  background-color: #0056b3;
+}
+
+.text-muted {
+  font-size: 0.9rem;
+}
+
+.alert {
+  margin-bottom: 20px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .overlay h2 {
+    font-size: 2.5rem;
+  }
+
+  .overlay p {
+    font-size: 1.1rem;
+  }
+
+  .signup-box {
+    padding: 20px;
+  }
+}

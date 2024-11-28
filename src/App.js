@@ -1,25 +1,57 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useEffect, useState } from "react";
+import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
+import useNotifications from "./Components/useNotifications";
+import { auth } from "./Components/firebaseConfig";
+import Login from "./pages/Login";
+import SignUp from "./pages/SignUp";
+import ChatRoom from "./pages/ChatRoom";
+import Header from "./Components/Header";
+import Toast from "./Components/Toaster";
+import "./App.css";
 
-function App() {
+const ProtectedRoute = ({ user, loading, children }) => {
+  if (loading) return null; // Or show a loading spinner here
+  return user ? children : <Navigate to="/login" replace />;
+};
+
+const App = () => {
+  useNotifications();
+
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <div>
+        <Header />
+        <Toast />
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<Login />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<SignUp />} />
+
+          {/* Protected Routes */}
+          <Route
+            path="/chatroom"
+            element={
+              <ProtectedRoute user={user} loading={loading}>
+                <ChatRoom />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </div>
+    </Router>
   );
-}
+};
 
 export default App;

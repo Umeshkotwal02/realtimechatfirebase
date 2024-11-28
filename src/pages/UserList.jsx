@@ -3,11 +3,11 @@ import React from 'react';
 import { Table } from 'react-bootstrap';
 
 const UserList = ({ users, selectedUser, setSelectedUser, getEmailInitials }) => {
-
     return (
         <>
             <div className="user text-center ">
-                <h5 className="fw-bolder">Chats</h5>
+                <h2 className="fw-bolder">User Contacts</h2>
+                <hr />
             </div>
             <div className="user-list-content">
                 <Table responsive>
@@ -39,7 +39,7 @@ const UserList = ({ users, selectedUser, setSelectedUser, getEmailInitials }) =>
                                         </span>
                                     </div>
                                 </td>
-                                <td>
+                                <td className='text-capitalize'>
                                     {user.firstName && user.lastName
                                         ? `${user.firstName} ${user.lastName}`
                                         : user.username || user.email || "Unknown User"

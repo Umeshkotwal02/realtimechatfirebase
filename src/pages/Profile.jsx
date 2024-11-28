@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { db, auth } from "../Components/firebaseConfig";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { Container, Row, Table, Button, Form } from "react-bootstrap";
+import { toast } from "react-toastify";
 
 const Profile = () => {
   const [currentUserProfile, setCurrentUserProfile] = useState(null);
@@ -57,15 +58,19 @@ const Profile = () => {
           lastName: editedProfile.lastName,
         });
         setCurrentUserProfile(editedProfile);
+        toast.success("User Profile Update SuccessFully");
         setEditMode(false);
       } catch (error) {
         console.error("Error updating profile:", error);
+        toast.error("Error updating profile:", error);
       }
     }
   };
 
   return (
     <Container className="profile-container">
+      <h2 className="fw-bolder text-center">Profile</h2>
+      <hr/>
       <Row className="justify-content-center">
         <div className="text-center">
           <div className="profile-avatar d-flex justify-content-center">

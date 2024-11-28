@@ -63,26 +63,26 @@ const ChatRoom = () => {
     const chatCollectionName = selectedUser?.id
       ? `messages_user_${Math.min(auth.currentUser.uid, selectedUser.id)}_${Math.max(auth.currentUser.uid, selectedUser.id)}`
       : "messages_global"; // Use global messages if no user is selected
-  
+
     const q = query(collection(db, chatCollectionName), orderBy("createdAt", "asc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const msgs = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       setMessages(msgs);
     });
-  
+
     return () => unsubscribe();
   }, [selectedUser]);
-  
+
 
   const sendMessage = async () => {
     if (message.trim() === "") return;
-  
+
     const currentUser = auth.currentUser;
     const recipientId = selectedUser?.id || "global";
-  
+
     // Create a unique collection name for one-on-one chat
     const chatCollectionName = recipientId !== "global" ? `messages_user_${Math.min(currentUser.uid, recipientId)}_${Math.max(currentUser.uid, recipientId)}` : "messages_global";
-  
+
     try {
       // Send message to Firestore in the respective collection
       await addDoc(collection(db, chatCollectionName), {
@@ -93,7 +93,7 @@ const ChatRoom = () => {
         username: currentUser.displayName || "",
         recipientId,
       });
-  
+
       // Send push notification
       if (recipientId !== "global") {
         const payload = {
@@ -107,7 +107,7 @@ const ChatRoom = () => {
             text: message,
           },
         };
-  
+
         // Make a request to your server to send the FCM message
         fetch('/send-fcm', {
           method: 'POST',
@@ -115,18 +115,18 @@ const ChatRoom = () => {
           body: JSON.stringify(payload),
         });
       }
-  
+
       setMessage("");
     } catch (error) {
       console.error("Error sending message: ", error);
     }
   };
-  
+
 
   return (
     <Container fluid className="chat-container h-100 w-100 mt-3">
       <Row>
-        <Col xl={4} md={4} xxl={4} sm={4}>
+        <Col xl={4} md={4} xxl={4} sm={12}>
           {/* Use UserList component */}
           <UserList
             users={users}
@@ -138,7 +138,9 @@ const ChatRoom = () => {
         </Col>
 
         {/* Chat Box */}
-        <Col xl={4} md={4} xxl={4} sm={4}>
+        <Col xl={4} md={4} xxl={4} sm={12}>
+          <h2 className="fw-bolder text-center">Chats</h2>
+          <hr/>
           <div className="chat-box">
             <div className="chat-header d-flex justify-content-between align-items-center">
               {/* Profile Avatar */}
@@ -228,7 +230,7 @@ const ChatRoom = () => {
                 variant="primary"
                 onClick={sendMessage}
                 className="rounded-circle justify-content-center"
-                style={{width:"45px"}}
+                style={{ width: "45px" }}
               >
                 <span className="fs-4 d-flex justify-content-center align-self-center">
                   <IoSendSharp />
@@ -237,7 +239,7 @@ const ChatRoom = () => {
             </div>
           </div>
         </Col>
-        <Col xl={4} md={4} xxl={4} sm={4}>
+        <Col xl={4} md={4} xxl={4} sm={12}>
           <Profile />
         </Col>
       </Row>

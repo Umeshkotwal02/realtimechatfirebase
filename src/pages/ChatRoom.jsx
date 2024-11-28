@@ -1,23 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { db, auth } from "../Components/firebaseConfig";
-import {
-  collection,
-  addDoc,
-  query,
-  orderBy,
-  onSnapshot,
-  getDocs,
-} from "firebase/firestore";
+import { collection, addDoc, query, orderBy, onSnapshot, getDocs, doc, getDoc } from "firebase/firestore";
 import { Container, Row, Col, Button, Form } from "react-bootstrap";
 import "../styles/ChatRoom.css";
 import { IoSendSharp } from "react-icons/io5";
+import UserList from "./UserList";
+import Profile from "./Profile";
 
 const ChatRoom = () => {
-
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [currentUserProfile, setCurrentUserProfile] = useState(null);
 
   const messagesRef = collection(db, "messages");
   const usersRef = collection(db, "users");
@@ -36,14 +31,12 @@ const ChatRoom = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-
         const userSnapshot = await getDocs(usersRef);
         const userList = userSnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         }));
         console.log("userList of Register::", userList);
-
         setUsers(userList);
       } catch (error) {
         console.error("Fetch User Error :: ", error);
@@ -52,12 +45,26 @@ const ChatRoom = () => {
     fetchUsers();
   }, []);
 
+  // Fetch current user's profile info
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (auth.currentUser) {
+        const userRef = doc(db, "users", auth.currentUser.uid);
+        const userDoc = await getDoc(userRef);
+        if (userDoc.exists()) {
+          setCurrentUserProfile(userDoc.data());
+        }
+      }
+    };
+    fetchUserProfile();
+  }, []);
+
   const sendMessage = async () => {
     if (message.trim() === "") return;
-  
+
     const currentUser = auth.currentUser;
-    const recipientId = selectedUser?.id || "global"; // Send to selected user or global
-  
+    const recipientId = selectedUser?.id || "global";
+
     // Send message to Firestore
     await addDoc(messagesRef, {
       text: message,
@@ -67,7 +74,7 @@ const ChatRoom = () => {
       username: currentUser.displayName || "",
       recipientId,
     });
-  
+
     // Send push notification to the recipient (or global if no specific user)
     if (recipientId !== "global") {
       const payload = {
@@ -81,7 +88,7 @@ const ChatRoom = () => {
           text: message,
         },
       };
-  
+
       // Make a request to your server to send the FCM message using Firebase Admin SDK
       fetch('/send-fcm', {
         method: 'POST',
@@ -89,58 +96,60 @@ const ChatRoom = () => {
         body: JSON.stringify(payload),
       });
     }
-  
-    setMessage("");
-  };
-  
 
-  // Function to get the initials of the email
-  const getEmailInitials = (email) => {
-    if (!email) return "??";
-    const parts = email.split('@');
-    const firstLetter = parts[0][0].toUpperCase();
-    const lastLetter = parts[0][parts[0].length - 1].toUpperCase();
-    return `${firstLetter}${lastLetter}`;
+    setMessage("");
   };
 
   return (
-    <Container fluid className="chat-container h-100 w-100">
+    <Container fluid className="chat-container h-100 w-100 mt-3">
       <Row>
-        {/* User List */}
-        <Col md={4} className="user-list">
-          <div className="user-list-header">
-            <h5>Registered Users</h5>
-          </div>
-          <div className="user-list-content">
-            {users.map((user) => (
-              <div
-                key={user.id}
-                className={`user-item ${selectedUser?.id === user.id ? "active" : ""}`}
-                onClick={() => setSelectedUser(user)}
-              >
-                <div className="user-avatar">
-                  <span className="avatar-initials">
-                    {getEmailInitials(user.email)}
-                  </span>
-                </div>
-                <div className="user-info">
-                  <span className="user-name">{user.username || ""}</span>
-                  <span className="user-email text-muted">{user.email}</span>
-                </div>
-              </div>
-            ))}
-          </div>
+        <Col xl={4} md={4} xxl={4} sm={4}>
+          {/* Use UserList component */}
+          <UserList
+            users={users}
+            selectedUser={selectedUser}
+            setSelectedUser={setSelectedUser}
+            getEmailInitials={(email) => email.split("@")[0].charAt(0).toUpperCase()}
+            loggedInUser={currentUserProfile}
+          />
         </Col>
 
         {/* Chat Box */}
-        <Col md={8}>
+        <Col xl={4} md={4} xxl={4} sm={4}>
           <div className="chat-box">
+            <div className="chat-header d-flex justify-content-between align-items-center">
+              {/* Profile Avatar */}
+              <div className="profile-avatar">
+                {currentUserProfile && currentUserProfile.profilePicture ? (
+                  <img
+                    src={currentUserProfile.profilePicture}
+                    alt="Profile"
+                    className="avatar-img"
+                  />
+                ) : (
+                  <span className="avatar-initials">
+                    {currentUserProfile
+                      ? `${currentUserProfile.firstName[0]}${currentUserProfile.lastName[0]}`
+                      : "??"}
+                  </span>
+                )}
+              </div>
+
+              {/* User's Name */}
+              <h5>
+                Welcome,{" "}
+                {currentUserProfile
+                  ? `${currentUserProfile.firstName} ${currentUserProfile.lastName}`
+                  : "User"}
+              </h5>
+            </div>
+
             {/* Chat Header */}
             <div className="chat-header d-flex justify-content-between align-items-center">
               <h5>
                 Chat with{" "}
                 {selectedUser
-                  ? `${selectedUser.username || ""}`
+                  ? `${selectedUser.username || selectedUser.email}`
                   : "Everyone"}
               </h5>
             </div>
@@ -162,7 +171,7 @@ const ChatRoom = () => {
                   >
                     <div className="message-meta text-truncate">
                       <span className="username">
-                        {msg.username} ~{msg.email}
+                        {msg.username} ~ {msg.email}
                       </span>
                     </div>
                     <div className="message-content">
@@ -190,6 +199,7 @@ const ChatRoom = () => {
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Type a message"
                 className="chat-input"
+                style={{ resize: "none" }}
               />
               <Button
                 variant="primary"
@@ -202,6 +212,9 @@ const ChatRoom = () => {
               </Button>
             </div>
           </div>
+        </Col>
+        <Col xl={4} md={4} xxl={4} sm={4}>
+          <Profile />
         </Col>
       </Row>
     </Container>

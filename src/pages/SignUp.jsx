@@ -65,27 +65,33 @@ const SignUp = () => {
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
-
+  
+      // Split displayName into firstName and lastName
+      const displayName = user.displayName || "Anonymous";
+      const [firstName, lastName = ""] = displayName.split(" ");
+  
       // Add user to Firestore
       await setDoc(doc(db, "users", user.uid), {
         uid: user.uid,
         email: user.email,
         firstName: firstName,
         lastName: lastName,
-        username: user.displayName || "Anonymous",
+        username: displayName,
         createdAt: new Date(),
       });
-
+  
       setSuccess(true);
       setError(null);
       navigate("/chatroom");
-      toast.success("User Register with Google")
+      console.log("Login With Google", result);
+      toast.success("User registered with Google",user.firstName);
     } catch (error) {
       setError(error.message);
       setSuccess(false);
-      toast.error("User Google Reg. error", `${error.message}`)
+      toast.error(`Google registration error: ${error.message}`);
     }
   };
+  
 
   const handleFocus = (field) => {
     setTouched((prev) => ({ ...prev, [field]: true }));

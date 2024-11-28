@@ -7,6 +7,8 @@ import {
   orderBy,
   onSnapshot,
   getDocs,
+  doc,
+  getDoc,
 } from "firebase/firestore";
 import { Container, Row, Col, Button, Form } from "react-bootstrap";
 import "../styles/ChatRoom.css";
@@ -18,6 +20,8 @@ const ChatRoom = () => {
   const [messages, setMessages] = useState([]);
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [currentUserProfile, setCurrentUserProfile] = useState(null);
+
 
   const messagesRef = collection(db, "messages");
   const usersRef = collection(db, "users");
@@ -52,36 +56,50 @@ const ChatRoom = () => {
     fetchUsers();
   }, []);
 
+  // Fetch current user's profile info
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (auth.currentUser) {
+        const userRef = doc(db, "users", auth.currentUser.uid);
+        const userDoc = await getDoc(userRef);
+        if (userDoc.exists()) {
+          setCurrentUserProfile(userDoc.data());
+        }
+      }
+    };
+    fetchUserProfile();
+  }, []);
+
   const sendMessage = async () => {
     if (message.trim() === "") return;
-  
+
     const currentUser = auth.currentUser;
     const recipientId = selectedUser?.id || "global"; // Send to selected user or global
-  
+
     // Send message to Firestore
     await addDoc(messagesRef, {
       text: message,
       createdAt: new Date(),
       userId: currentUser.uid,
       email: currentUser.email,
-      username: currentUser.displayName || "Anonymous",
+      username: currentUser.displayName || "",
       recipientId,
     });
-  
+
     // Send push notification to the recipient (or global if no specific user)
     if (recipientId !== "global") {
       const payload = {
         to: `user_fcm_token_of_${recipientId}`, // Get the recipient's FCM token from Firestore or wherever you store it
         notification: {
-          title: `${currentUser.displayName || "Anonymous"} sent you a message`,
+          title: `${currentUser.displayName || ""} sent you a message`,
           body: message,
         },
         data: {
-          username: currentUser.displayName || "Anonymous",
+          username: currentUser.displayName || "",
           text: message,
         },
       };
-  
+
       // Make a request to your server to send the FCM message using Firebase Admin SDK
       fetch('/send-fcm', {
         method: 'POST',
@@ -89,13 +107,14 @@ const ChatRoom = () => {
         body: JSON.stringify(payload),
       });
     }
-  
+
     setMessage("");
   };
-  
+
 
   // Function to get the initials of the email
   const getEmailInitials = (email) => {
+    if (!email) return "??";
     const parts = email.split('@');
     const firstLetter = parts[0][0].toUpperCase();
     const lastLetter = parts[0][parts[0].length - 1].toUpperCase();
@@ -123,7 +142,7 @@ const ChatRoom = () => {
                   </span>
                 </div>
                 <div className="user-info">
-                  <span className="user-name">{user.username || "Anonymous"}</span>
+                  <span className="user-name">{user.username || ""}</span>
                   <span className="user-email text-muted">{user.email}</span>
                 </div>
               </div>
@@ -134,12 +153,39 @@ const ChatRoom = () => {
         {/* Chat Box */}
         <Col md={8}>
           <div className="chat-box">
+            <div className="chat-header d-flex justify-content-between align-items-center">
+              {/* Profile Avatar */}
+              <div className="profile-avatar">
+                {currentUserProfile && currentUserProfile.profilePicture ? (
+                  <img
+                    src={currentUserProfile.profilePicture}
+                    alt="Profile"
+                    className="avatar-img"
+                  />
+                ) : (
+                  <span className="avatar-initials">
+                    {currentUserProfile
+                      ? `${currentUserProfile.firstName[0]}${currentUserProfile.lastName[0]}`
+                      : "??"}
+                  </span>
+                )}
+              </div>
+
+              {/* User's Name */}
+              <h5>
+                Welcome,{" "}
+                {currentUserProfile
+                  ? `${currentUserProfile.firstName} ${currentUserProfile.lastName}`
+                  : "User"}
+              </h5>
+            </div>
+
             {/* Chat Header */}
             <div className="chat-header d-flex justify-content-between align-items-center">
               <h5>
                 Chat with{" "}
                 {selectedUser
-                  ? `${selectedUser.username || "Anonymous"}`
+                  ? `${selectedUser.username || selectedUser.email}`
                   : "Everyone"}
               </h5>
             </div>
@@ -208,94 +254,3 @@ const ChatRoom = () => {
 };
 
 export default ChatRoom;
-
-
-
-export default ChatRoom;
-.chat-box {
-  background: #ffffff;
-  border-radius: 15px;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: column;
-  height: 80vh;
-  width: 100%;
-  max-width: 600px;
-}
-
-.chat-header {
-  background-color: #007bff;
-  color: #ffffff;
-  padding: 10px 20px;
-  font-size: 1.2rem;
-  font-weight: bold;
-}
-
-.chat-messages {
-  flex: 1;
-  padding: 10px;
-  overflow-y: auto;
-  background: #e9ecef;
-  display: flex;
-  flex-direction: column;
-}
-
-.chat-message {
-  display: flex;
-  flex-direction: column;
-  margin: 5px 0;
-}
-
-.own-message {
-  align-self: flex-end;
-  background-color: #dcf8c6;
-  border-radius: 10px 10px 0 10px;
-  padding: 8px 10px;
-  max-width: 70%;
-  color: #000;
-}
-
-.received-message {
-  align-self: flex-start;
-  background-color: #ffffff;
-  border-radius: 10px 10px 10px 0;
-  padding: 8px 10px;
-  max-width: 70%;
-  color: #000;
-}
-
-.message-content {
-  position: relative;
-}
-
-.message-text {
-  margin: 0;
-  font-size: 0.9rem;
-}
-
-.message-time {
-  font-size: 0.8rem;
-  color: #6c757d;
-  text-align: right;
-  margin-top: 3px;
-}
-
-.chat-input-container {
-  display: flex;
-  background: #f8f9fa;
-  border-top: 1px solid #ddd;
-  padding: 10px;
-}
-
-.chat-input {
-  flex: 1;
-  border: none;
-  border-radius: 20px;
-  padding: 10px 15px;
-  margin-right: 10px;
-}
-
-.received-message .username {
-  color: #007bff;
-}

@@ -1,9 +1,8 @@
+// UserList.jsx
 import React from 'react';
 import { Table } from 'react-bootstrap';
 
-const UserList = ({ users, selectedUser, setSelectedUser, getEmailInitials, loggedInUser }) => {
-    // Filter out the logged-in user from the list
-    const filteredUsers = users.filter(user => user.email !== loggedInUser?.email);
+const UserList = ({ users, selectedUser, setSelectedUser, getEmailInitials }) => {
 
     return (
         <>
@@ -19,37 +18,32 @@ const UserList = ({ users, selectedUser, setSelectedUser, getEmailInitials, logg
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredUsers.map((user) => (
+                        {users.map((user) => (
                             <tr
                                 key={user.id}
                                 className={`user-item ${selectedUser?.id === user.id ? "active" : ""}`}
                                 onClick={() => setSelectedUser(user)}
                             >
                                 <td>
-                                    <div
-                                        className="user-avatar"
-                                        style={{
-                                            backgroundColor: getRandomColor(),
-                                            borderRadius: '50%',
-                                            width: '40px',
-                                            height: '40px',
-                                            display: 'flex',
-                                            justifyContent: 'center',
-                                            alignItems: 'center',
-                                        }}
-                                    >
-                                        <span
-                                            className="avatar-initials"
-                                            style={{ color: '#fff', fontWeight: 'bold' }}
-                                        >
+                                    <div className="user-avatar" style={{
+                                        backgroundColor: getRandomColor(),
+                                        borderRadius: '50%',
+                                        width: '40px',
+                                        height: '40px',
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        alignItems: 'center'
+                                    }}>
+                                        <span className="avatar-initials" style={{ color: '#fff', fontWeight: 'bold' }}>
                                             {getEmailInitials(user.email)}
                                         </span>
                                     </div>
                                 </td>
                                 <td>
-                                    <span className="user-name">
-                                        {user.username || user.email || "Unknown User"}
-                                    </span>
+                                    {user.firstName && user.lastName
+                                        ? `${user.firstName} ${user.lastName}`
+                                        : user.username || user.email || "Unknown User"
+                                    }
                                 </td>
                             </tr>
                         ))}

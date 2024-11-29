@@ -65,11 +65,11 @@ const SignUp = () => {
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
-  
+
       // Split displayName into firstName and lastName
       const displayName = user.displayName || "Anonymous";
       const [firstName, lastName = ""] = displayName.split(" ");
-  
+
       // Add user to Firestore
       await setDoc(doc(db, "users", user.uid), {
         uid: user.uid,
@@ -79,19 +79,19 @@ const SignUp = () => {
         username: displayName,
         createdAt: new Date(),
       });
-  
+
       setSuccess(true);
       setError(null);
       navigate("/chatroom");
       console.log("Login With Google", result);
-      toast.success("User registered with Google",user.firstName);
+      toast.success("User registered with Google", user.firstName);
     } catch (error) {
       setError(error.message);
       setSuccess(false);
       toast.error(`Google registration error: ${error.message}`);
     }
   };
-  
+
 
   const handleFocus = (field) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
@@ -115,10 +115,10 @@ const SignUp = () => {
   };
 
   return (
-    <Container fluid className="signup-page">
+    <Container fluid>
       <Row>
         {/* Left Section - Illustration */}
-        <Col md={6} xl={6} xs={6} xxl={6} className="left-section d-flex align-items-center justify-content-center">
+        <Col xs={12} sm={12} md={6} lg={6} xl={6} xxl={6} className="left-section2 d-flex align-items-center justify-content-center">
           <div>
             <h1 className="title">Register & Be A Part Of The Chat Circle!</h1>
             <p className="subtitle">Start your journey with us, it's free!</p>
@@ -131,7 +131,7 @@ const SignUp = () => {
         </Col>
 
         {/* Right Section - Sign Up Form */}
-        <Col md={6} xl={6} xs={6} xxl={6} className="right-section">
+        <Col xs={12} sm={12} md={6} lg={6} xl={6} xxl={6} className="right-section">
           <div className="form-container">
             <h2 className="text-center">Sign Up</h2>
             {success && <Alert variant="success">Account created successfully!</Alert>}
@@ -141,7 +141,6 @@ const SignUp = () => {
               e.preventDefault();
               handleSignup();
             }}>
-
 
               <Form.Group controlId="formFirstName">
                 <Form.Label>First Name<span className="text-danger">*</span></Form.Label>
@@ -174,7 +173,7 @@ const SignUp = () => {
                   <Form.Text className="text-danger">LastName is required.</Form.Text>
                 )}
               </Form.Group>
-              
+
               <Form.Group controlId="formEmail">
                 <Form.Label>Email<span class="text-danger">*</span></Form.Label>
                 <Form.Control
@@ -191,8 +190,8 @@ const SignUp = () => {
                 )}
               </Form.Group>
 
-              <Form.Group controlId="formPassword" className="mt-3">
-                <Form.Label >Password<span class="text-danger">*</span></Form.Label>
+              <Form.Group controlId="formPassword" className="mt-3 position-relative">
+                <Form.Label>Password<span className="text-danger">*</span></Form.Label>
                 <Form.Control
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
@@ -204,13 +203,7 @@ const SignUp = () => {
                 />
                 <span
                   onClick={togglePasswordVisibility}
-                  style={{
-                    position: "relative",
-                    right: "-314px",
-                    bottom: "47px",
-                    transform: "translateY(-50%)",
-                    cursor: "pointer",
-                  }}
+                  className="password-toggle"
                 >
                   {showPassword ? <FaEyeSlash /> : <FaEye />}
                 </span>
@@ -218,9 +211,6 @@ const SignUp = () => {
                   <Form.Text className="text-danger">Password is required.</Form.Text>
                 )}
               </Form.Group>
-
-
-
               <Button variant="primary" className="mt-3 w-100" type="submit">
                 Sign Up
               </Button>

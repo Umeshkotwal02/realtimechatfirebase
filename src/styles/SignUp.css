@@ -1,18 +1,22 @@
-/* Overall container */
-.signup-container {
-  display: flex;
-  flex-direction: row;
-  height: 100vh !important;
-}
-
 /* Left Section: Background with overlay */
 .signup-left {
   position: relative;
   background-image: url('../../public/images/cover-img-2.png');
   background-size: cover;
   background-position: center;
+  height: 100vh;
   filter: brightness(0.6);
-  height: 100%;
+}
+
+.left-section2 {
+  background: linear-gradient(to bottom, #6a11cb, #89a6d8);
+  background-size: cover;
+  background-position: center;
+  width: 100vw;
+  height: 100vh;
+  color: #fff;
+  text-align: center;
+  padding: 50px;
 }
 
 .overlay {
@@ -44,16 +48,6 @@
   align-items: center;
   background-color: #f7f7f7;
   height: 100%;
-  padding: 20px;
-}
-
-.signup-box {
-  background: #ffffff;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-  padding: 30px;
-  border-radius: 8px;
-  width: 100%;
-  max-width: 400px;
 }
 
 .signup-box h2 {
@@ -102,5 +96,43 @@
 
   .signup-box {
     padding: 20px;
+  }
+}
+
+/* Add this style for the eye icon to make it responsive */
+.password-toggle {
+  position: absolute;
+  right: 9px;
+  top: 73%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  z-index: 10;
+}
+
+/* Responsive Design for smaller screens */
+@media (max-width: 768px) {
+  .password-toggle {
+    right: 15px;
+    /* Adjust for smaller screens */
+    top: 73%;
+    /* Center vertically relative to the input field */
+  }
+
+  .signup-box {
+    padding: 20px;
+  }
+
+  /* Adjust font sizes and padding for smaller screens */
+  .overlay h2 {
+    font-size: 2.5rem;
+  }
+
+  .overlay p {
+    font-size: 1.1rem;
+  }
+
+  .form-control {
+    padding-right: 40px;
+    /* Ensure there's space for the icon */
   }
 }

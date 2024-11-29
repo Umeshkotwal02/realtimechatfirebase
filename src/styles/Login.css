@@ -1,10 +1,8 @@
-.login-page {
-  height: calc(100vh - 65px);
-  display: flex;
-}
-
 .left-section {
   background: linear-gradient(to bottom, #6a11cb, #89a6d8);
+  background-size: cover;
+  background-position: center;
+  height: 100vh;
   color: #fff;
   text-align: center;
   padding: 50px;

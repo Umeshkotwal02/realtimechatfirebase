@@ -14,29 +14,46 @@ const ChatRoom = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [currentUserProfile, setCurrentUserProfile] = useState(null);
 
-  const messagesRef = collection(db, "messages");
+  // const messagesRef = collection(db, "messages");
   const usersRef = collection(db, "users");
+
+  const getChatCollectionName = (userId1, userId2) => {
+    const [id1, id2] = [userId1, userId2].sort(); // Ensure consistent order
+    return `messages_user_${id1}_${id2}`;
+  };
 
   // Fetch messages
   useEffect(() => {
-    const q = query(messagesRef, orderBy("createdAt", "asc"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const msgs = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      setMessages(msgs);
-    });
-    return () => unsubscribe();
-  }, []);
+    const fetchMessages = async () => {
+      if (!auth.currentUser) return;
+
+      const chatCollectionName = selectedUser
+        ? getChatCollectionName(auth.currentUser.uid, selectedUser.id)
+        : "messages_global";
+
+      const q = query(collection(db, chatCollectionName), orderBy("createdAt", "asc"));
+
+      // Subscribe to the messages collection
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const msgs = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        setMessages(msgs);
+      });
+
+      return () => unsubscribe();
+    };
+
+    fetchMessages();
+  }, [selectedUser]);
 
   // Fetch registered users
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const userSnapshot = await getDocs(usersRef);
-        const userList = userSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        console.log("userList of Register::", userList);
+        const userList = userSnapshot.docs
+          .map((doc) => ({ id: doc.id, ...doc.data() }))
+          .filter((user) => user.id !== auth.currentUser.uid); // Exclude the current user
+
         setUsers(userList);
       } catch (error) {
         console.error("Fetch User Error :: ", error);
@@ -60,18 +77,19 @@ const ChatRoom = () => {
   }, []);
 
   useEffect(() => {
-    const chatCollectionName = selectedUser?.id
+    const chatCollectionName = selectedUser
       ? `messages_user_${Math.min(auth.currentUser.uid, selectedUser.id)}_${Math.max(auth.currentUser.uid, selectedUser.id)}`
-      : "messages_global"; // Use global messages if no user is selected
+      : "messages_global"; // Use global chat collection if no user selected
 
     const q = query(collection(db, chatCollectionName), orderBy("createdAt", "asc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const msgs = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      setMessages(msgs);
+      setMessages(msgs); // Set messages for the current chat
     });
 
     return () => unsubscribe();
   }, [selectedUser]);
+
 
 
   const sendMessage = async () => {
@@ -80,48 +98,24 @@ const ChatRoom = () => {
     const currentUser = auth.currentUser;
     const recipientId = selectedUser?.id || "global";
 
-    // Create a unique collection name for one-on-one chat
-    const chatCollectionName = recipientId !== "global" ? `messages_user_${Math.min(currentUser.uid, recipientId)}_${Math.max(currentUser.uid, recipientId)}` : "messages_global";
+    const chatCollectionName = recipientId !== "global"
+      ? getChatCollectionName(currentUser.uid, recipientId)
+      : "messages_global";
 
     try {
-      // Send message to Firestore in the respective collection
       await addDoc(collection(db, chatCollectionName), {
         text: message,
         createdAt: new Date(),
         userId: currentUser.uid,
+        recipientId,
         email: currentUser.email,
         username: currentUser.displayName || "",
-        recipientId,
       });
-
-      // Send push notification
-      if (recipientId !== "global") {
-        const payload = {
-          to: `user_fcm_token_of_${recipientId}`, // Fetch token dynamically
-          notification: {
-            title: `${currentUser.displayName || ""} sent you a message`,
-            body: message,
-          },
-          data: {
-            username: currentUser.displayName || "",
-            text: message,
-          },
-        };
-
-        // Make a request to your server to send the FCM message
-        fetch('/send-fcm', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-      }
-
       setMessage("");
     } catch (error) {
       console.error("Error sending message: ", error);
     }
   };
-
 
   return (
     <Container fluid className="chat-container h-100 w-100 mt-3">
@@ -140,7 +134,7 @@ const ChatRoom = () => {
         {/* Chat Box */}
         <Col xl={4} md={4} xxl={4} sm={12}>
           <h2 className="fw-bolder text-center">Chats</h2>
-          <hr/>
+          <hr />
           <div className="chat-box">
             <div className="chat-header d-flex justify-content-between align-items-center">
               {/* Profile Avatar */}
@@ -181,39 +175,27 @@ const ChatRoom = () => {
 
             {/* Chat Messages */}
             <div className="chat-messages">
-              {messages
-                .filter(
-                  (msg) =>
-                    !selectedUser || msg.recipientId === selectedUser.id || msg.recipientId === "global"
-                )
-                .map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`chat-message ${msg.userId === auth.currentUser.uid
-                      ? "own-message"
-                      : "received-message"
-                      }`}
-                  >
-                    <div className="message-meta text-truncate">
-                      <span className="username">
-                        {msg.username} ~ {msg.email}
-                      </span>
-                    </div>
-                    <div className="message-content">
-                      <p className="message-text">{msg.text}</p>
-                      <span className="message-time">
-                        {new Date(msg.createdAt.toDate()).toLocaleTimeString(
-                          [],
-                          {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          }
-                        )}
-                      </span>
-                    </div>
+              {messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`chat-message ${msg.userId === auth.currentUser.uid ? "own-message" : "received-message"}`}
+                >
+                  <div className="message-meta text-truncate">
+                    <span className="username">~ {msg.email}</span>
                   </div>
-                ))}
+                  <div className="message-content">
+                    <p className="message-text">{msg.text}</p>
+                    <span className="message-time">
+                      {new Date(msg.createdAt.toDate()).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
+
 
             {/* Chat Input */}
             <div className="chat-input-container">
@@ -222,17 +204,26 @@ const ChatRoom = () => {
                 rows={1}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                  }
+                }}
                 placeholder="Type a message"
                 className="chat-input"
                 style={{ resize: "none" }}
               />
+
               <Button
                 variant="primary"
                 onClick={sendMessage}
                 className="rounded-circle justify-content-center"
-                style={{ width: "45px" }}
+                style={{
+                  width: "36px", height: '39px'
+                }}
               >
-                <span className="fs-4 d-flex justify-content-center align-self-center">
+                <span className="fs-3 d-flex justify-content-center align-self-center">
                   <IoSendSharp />
                 </span>
               </Button>
@@ -243,7 +234,7 @@ const ChatRoom = () => {
           <Profile />
         </Col>
       </Row>
-    </Container>
+    </Container >
   );
 };
 

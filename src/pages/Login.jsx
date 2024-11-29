@@ -38,7 +38,7 @@ const Login = () => {
       setSuccess(true);
       setError(null);
       navigate("/chatroom");
-      toast.success("User Login With Google")
+      toast.success("Welcome!",email)
     } catch (error) {
       setError(error.message);
       setSuccess(false);
@@ -87,7 +87,7 @@ const Login = () => {
     <Container fluid className="login-page">
       <Row>
         {/* Left Side - Illustration */}
-        <Col md={6} xl={6} xs={6} xxl={6} className="left-section d-flex align-items-center justify-content-center">
+        <Col xs={12} sm={12} md={6} lg={6} xl={6} xxl={6} className="left-section">
           <div style={{ fontFamily: "Cursive" }}>
             <h1 className="title">Join & Be A Part Of The Chat Circle!</h1>
             <p className="subtitle">Please Login To Use the Platform</p>
@@ -101,7 +101,7 @@ const Login = () => {
         </Col>
 
         {/* Right Side - Login Form */}
-        <Col md={6} xl={6} xs={6} xxl={6} className="right-section">
+        <Col xs={12} sm={12} md={6} lg={6} xl={6} xxl={6} className="right-section">
           <div className="form-container">
             <h2 className="text-center fw-bold">Login</h2>
             {success && <Alert variant="success">Logged in successfully!</Alert>}

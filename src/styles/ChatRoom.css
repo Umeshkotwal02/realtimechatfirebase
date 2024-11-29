@@ -1,5 +1,5 @@
+
 .chat-box {
-  background: #ffffff;
   border-radius: 15px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -7,7 +7,6 @@
   flex-direction: column;
   height: 77vh;
   width: 100%;
-  max-width: 600px;
 }
 
 .chat-header {
@@ -19,10 +18,13 @@
 }
 
 .chat-messages {
+  background-image: url("../../public/images/chat-bg.jpg");
+  background-size: cover;
+  opacity: 0.7;
+  z-index: -1; 
   flex: 1;
   padding: 10px;
   overflow-y: auto;
-  background: #e9ecef;
   display: flex;
   flex-direction: column;
 }

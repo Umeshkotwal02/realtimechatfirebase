@@ -3,9 +3,10 @@ import { db, auth } from "../Components/firebaseConfig";
 import { collection, addDoc, query, orderBy, onSnapshot, getDocs, doc, getDoc } from "firebase/firestore";
 import { Container, Row, Col, Button, Form } from "react-bootstrap";
 import "../styles/ChatRoom.css";
-import { IoSendSharp } from "react-icons/io5";
+import { IoHappyOutline, IoSendSharp } from "react-icons/io5";
 import UserList from "./UserList";
 import Profile from "./Profile";
+import EmojiPicker from 'emoji-picker-react';
 
 const ChatRoom = () => {
   const [message, setMessage] = useState("");
@@ -13,6 +14,7 @@ const ChatRoom = () => {
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [currentUserProfile, setCurrentUserProfile] = useState(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   // const messagesRef = collection(db, "messages");
   const usersRef = collection(db, "users");
@@ -117,10 +119,15 @@ const ChatRoom = () => {
     }
   };
 
+  const handleEmojiClick = (emoji) => {
+    setMessage((prevMessage) => prevMessage + emoji.native); // Add the selected emoji to the message
+    setShowEmojiPicker(false); // Hide emoji picker after selection
+  };
+
   return (
-    <Container fluid className="chat-container h-100 w-100 mt-3">
+    <Container fluid className="chat-container h-100 w-100">
       <Row>
-        <Col xl={4} md={4} xxl={4} sm={12}>
+        <Col xl={3} md={3} xxl={3} sm={12}>
           {/* Use UserList component */}
           <UserList
             users={users}
@@ -132,7 +139,7 @@ const ChatRoom = () => {
         </Col>
 
         {/* Chat Box */}
-        <Col xl={4} md={4} xxl={4} sm={12}>
+        <Col xl={6} md={6} xxl={6} sm={12}>
           <h2 className="fw-bolder text-center">Chats</h2>
           <hr />
           <div className="chat-box">
@@ -199,6 +206,10 @@ const ChatRoom = () => {
 
             {/* Chat Input */}
             <div className="chat-input-container">
+              <Button>
+              <IoHappyOutline onClick={handleEmojiClick}/>
+              </Button>
+
               <Form.Control
                 as="textarea"
                 rows={1}
@@ -227,10 +238,18 @@ const ChatRoom = () => {
                   <IoSendSharp />
                 </span>
               </Button>
+
+              {/* Emoji Picker */}
+              {showEmojiPicker && (
+                <div className="emoji-picker-container">
+                  <EmojiPicker onEmojiClick={handleEmojiClick} />
+                </div>
+              )}
+
             </div>
           </div>
         </Col>
-        <Col xl={4} md={4} xxl={4} sm={12}>
+        <Col xl={3} md={3} xxl={3} sm={12}>
           <Profile />
         </Col>
       </Row>

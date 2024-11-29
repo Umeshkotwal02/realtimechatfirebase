@@ -9,6 +9,7 @@ import Header from "./Components/Header";
 import Toast from "./Components/Toaster";
 import "./App.css";
 
+
 const ProtectedRoute = ({ user, loading, children }) => {
   if (loading) return null; // Or show a loading spinner here
   return user ? children : <Navigate to="/login" replace />;
@@ -29,8 +30,8 @@ const App = () => {
   }, []);
 
   return (
-    <Router>
-      <div>
+    <div>
+      <Router>
         <Header />
         <Toast />
         <Routes>
@@ -49,8 +50,8 @@ const App = () => {
             }
           />
         </Routes>
-      </div>
-    </Router>
+      </Router>
+    </div>
   );
 };
 

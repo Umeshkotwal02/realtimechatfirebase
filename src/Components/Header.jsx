@@ -5,10 +5,13 @@ import Navbar from "react-bootstrap/Navbar";
 import { Link, useNavigate } from "react-router-dom";
 import { auth } from "./firebaseConfig";
 import { toast } from "react-toastify";
+import { CgProfile } from "react-icons/cg";
+import Profile from "../pages/Profile";
 
 const Header = () => {
   const [user, setUser] = useState(null);
   const [showOffcanvas, setShowOffcanvas] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const navigate = useNavigate();
 
   // Monitor authentication state
@@ -32,21 +35,21 @@ const Header = () => {
 
   return (
     <>
-      <Navbar bg="dark" data-bs-theme="dark" style={{ height: "65px" }} expand="lg">
+      <Navbar bg="dark" data-bs-theme="dark" expand="lg">
         <Container>
           {/* Main Navbar Brand */}
           <Navbar.Brand className="fw-bolder">
             <Image
               src="/images/logo.png"
               roundedCircle
-              style={{ width: "75px" }}
+              style={{ width: "50px" }}
               className="me-3"
             />
             <span
-              className="d-none d-sm-inline"
+              className="d-none d-sm-inline text-capitalize"
               style={{ fontFamily: "Cursive", fontSize: "1.5rem" }}
             >
-              Welcome To Chat App !!!
+              {user ? `Welcome ${user.displayName || user.email.split('@')[0]} To Chat App !!!` : "Welcome To Chat App !!!"}
             </span>
           </Navbar.Brand>
 
@@ -57,21 +60,38 @@ const Header = () => {
           <Navbar.Collapse id="offcanvasNavbar" className="d-none d-lg-flex">
             <Navbar.Text className="ms-auto">
               {user ? (
-                <Button variant="danger" onClick={handleLogout}>
-                  Logout
-                </Button>
+                <div className="d-flex align-items-center">
+                  <span
+                    className="text-white me-3 d-flex align-items-center"
+                    onClick={() => setShowProfile(true)}
+                    role="button" // Make it accessible
+                  >
+                    <CgProfile className="fs-2" />
+                  </span>
+                  <Button variant="danger" className="ms-2" onClick={handleLogout}>
+                    Logout
+                  </Button>
+                </div>
               ) : (
-                <>
-                  <Link to="/login" className="text-decoration-none text-white">
+                <div className="d-flex align-items-center">
+                  <Link to="/login" className="text-decoration-none text-white me-2">
                     Login
-                  </Link>{" "}
-                  |{" "}
+                  </Link>
+                  <span className="text-white mx-2">|</span>
                   <Link to="/signup" className="text-decoration-none text-white ms-1">
                     Sign Up free
                   </Link>
-                </>
+                </div>
               )}
             </Navbar.Text>
+
+            {/* Render Profile Modal */}
+            {showProfile && (
+              <Profile
+                show={showProfile}
+                onHide={() => setShowProfile(false)} // Ensure the state is correctly toggled
+              />
+            )}
           </Navbar.Collapse>
         </Container>
       </Navbar>

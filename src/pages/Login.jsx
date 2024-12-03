@@ -113,7 +113,7 @@ const Login = () => {
               }}
             >
               <Form.Group controlId="formEmail">
-                <Form.Label>Enter Email<span class="text-danger">*</span></Form.Label>
+                <Form.Label>Enter Email<span className="text-danger">*</span></Form.Label>
                 <Form.Control
                   type="email"
                   placeholder="Enter your email"
@@ -129,7 +129,7 @@ const Login = () => {
               </Form.Group>
 
               <Form.Group controlId="formPassword" className="mt-3">
-                <Form.Label>Enter Password<span class="text-danger">*</span></Form.Label>
+                <Form.Label>Enter Password<span className="text-danger">*</span></Form.Label>
                 <Form.Control
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
@@ -147,7 +147,7 @@ const Login = () => {
                   style={{
                     position: "relative",
                     right: "-314px",
-                    bottom: "47px",
+                    bottom: "32px",
                     transform: "translateY(-50%)",
                     cursor: "pointer",
                   }}

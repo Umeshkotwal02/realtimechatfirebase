@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
-import useNotifications from "./Components/useNotifications";
 import { auth } from "./Components/firebaseConfig";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
 import ChatRoom from "./pages/ChatRoom";
 import Header from "./Components/Header";
 import Toast from "./Components/Toaster";
-import "./App.css";
-
+import "./App.css"; // Ensure you have the required styles
 
 const ProtectedRoute = ({ user, loading, children }) => {
   if (loading) return null; // Or show a loading spinner here
@@ -16,7 +14,6 @@ const ProtectedRoute = ({ user, loading, children }) => {
 };
 
 const App = () => {
-  useNotifications();
 
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -30,26 +27,28 @@ const App = () => {
   }, []);
 
   return (
-    <div>
+    <div className="app-container">
       <Router>
         <Header />
-        <Toast />
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<Login />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<SignUp />} />
+        <div className="">
+          <Toast />
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<Login />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<SignUp />} />
 
-          {/* Protected Routes */}
-          <Route
-            path="/chatroom"
-            element={
-              <ProtectedRoute user={user} loading={loading}>
-                <ChatRoom />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
+            {/* Protected Routes */}
+            <Route
+              path="/chatroom"
+              element={
+                <ProtectedRoute user={user} loading={loading}>
+                  <ChatRoom />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </div>
       </Router>
     </div>
   );

@@ -1,15 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { db, auth } from "../Components/firebaseConfig";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { Container, Row, Table, Button, Form } from "react-bootstrap";
+import { Modal, Button, Form, Table } from "react-bootstrap";
 import { toast } from "react-toastify";
 
-const Profile = () => {
+const Profile = ({ show, onHide }) => {
   const [currentUserProfile, setCurrentUserProfile] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [editedProfile, setEditedProfile] = useState({});
 
-  // Fetch user profile from Firebase
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (auth.currentUser) {
@@ -42,13 +41,11 @@ const Profile = () => {
     };
   };
 
-  // Handle input change
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setEditedProfile({ ...editedProfile, [name]: value });
   };
 
-  // Save updated profile to Firebase
   const handleSave = async () => {
     if (auth.currentUser) {
       const userRef = doc(db, "users", auth.currentUser.uid);
@@ -58,30 +55,34 @@ const Profile = () => {
           lastName: editedProfile.lastName,
         });
         setCurrentUserProfile(editedProfile);
-        toast.success("User Profile Update SuccessFully");
+        toast.success("User Profile Updated Successfully");
         setEditMode(false);
       } catch (error) {
         console.error("Error updating profile:", error);
-        toast.error("Error updating profile:", error);
+        toast.error("Error updating profile");
       }
     }
   };
 
   return (
-    <Container className="profile-container">
-      <h2 className="fw-bolder text-center">Profile</h2>
-      <hr/>
-      <Row className="justify-content-center">
-        <div className="text-center">
+    <Modal show={show} onHide={onHide} centered>
+      <Modal.Header closeButton>
+        <div className="w-100 d-flex justify-content-center fw-bolder">
+          <Modal.Title>Profile</Modal.Title>
+        </div>
+      </Modal.Header>
+
+      <Modal.Body>
+        {/* Profile details */}
+        <div className="text-center mb-3">
           <div className="profile-avatar d-flex justify-content-center">
             {currentUserProfile && currentUserProfile.profilePicture ? (
               <img
                 src={currentUserProfile.profilePicture}
                 alt="Profile"
-                className="avatar-img"
                 style={{
-                  width: "150px",
-                  height: "150px",
+                  width: "100px",
+                  height: "100px",
                   borderRadius: "50%",
                 }}
               />
@@ -100,8 +101,6 @@ const Profile = () => {
           </h3>
           <p>{currentUserProfile ? currentUserProfile.email : "Email not available"}</p>
         </div>
-      </Row>
-      <Row className="mt-4">
         <Table hover responsive>
           <tbody>
             <tr>
@@ -140,24 +139,25 @@ const Profile = () => {
             </tr>
           </tbody>
         </Table>
-      </Row>
-      <Row className="mt-3">
+      </Modal.Body>
+      <Modal.Footer className="justify-content-center">
         {editMode ? (
           <>
-            <Button variant="success" className="m-2" onClick={handleSave}>
+            <Button variant="success" onClick={handleSave}>
               Save
             </Button>
-            <Button variant="secondary" className="m-2" onClick={() => setEditMode(false)}>
+            <Button variant="secondary" onClick={() => setEditMode(false)}>
               Cancel
             </Button>
           </>
         ) : (
-          <Button variant="primary" onClick={() => setEditMode(true)}>
+          <Button variant="primary" onClick={() => setEditMode(true)} className="justify-content-center">
             Edit Profile
           </Button>
         )}
-      </Row>
-    </Container>
+      </Modal.Footer>
+    </Modal>
+
   );
 };
 

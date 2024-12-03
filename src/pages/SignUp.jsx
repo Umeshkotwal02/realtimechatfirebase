@@ -175,7 +175,7 @@ const SignUp = () => {
               </Form.Group>
 
               <Form.Group controlId="formEmail">
-                <Form.Label>Email<span class="text-danger">*</span></Form.Label>
+                <Form.Label>Email<span className="text-danger">*</span></Form.Label>
                 <Form.Control
                   type="email"
                   placeholder="Enter your email"

@@ -9,6 +9,8 @@ import { emojis } from "./emojis";
 import { FaVideo } from "react-icons/fa6";
 import { IoIosSearch } from "react-icons/io";
 import VideoCall from "../Components/VideoCall";
+import { updateDoc, serverTimestamp } from "firebase/firestore";
+
 
 
 
@@ -22,8 +24,43 @@ const ChatRoom = () => {
   const [searchTerm, setSearchTerm] = useState("");  // State for the search term
   const [roomID, setRoomID] = useState("");
   const [isVideoCallActive, setIsVideoCallActive] = useState(false);
+  const [selectedUserLastSeen, setSelectedUserLastSeen] = useState(null);
+
+
 
   const messagesEndRef = useRef(null);
+  const userRef = doc(db, "users", auth.currentUser.uid);
+
+  if (auth.currentUser) {
+    console.log("Authenticated User ID: ", auth.currentUser.uid);
+  } else {
+    console.error("User is not authenticated!");
+  }
+
+
+  const updateLastSeen = async () => {
+    try {
+      if (auth.currentUser) {
+        const userRef = doc(db, "users", auth.currentUser.uid);
+        await updateDoc(userRef, {
+          lastSeen: serverTimestamp(),
+        });
+        console.log("Last seen updated successfully");
+      } else {
+        console.error("No authenticated user found");
+      }
+    } catch (error) {
+      console.error("Error updating last seen: ", error);
+    }
+  };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      updateLastSeen();
+    }, 30000); // Update every 30 seconds
+
+    return () => clearInterval(interval);
+  }, []);
 
 
   const startVideoCall = (userID) => {
@@ -53,6 +90,47 @@ const ChatRoom = () => {
     const [id1, id2] = [userId1, userId2].sort(); // Ensure consistent order
     return `messages_user_${id1}_${id2}`;
   };
+
+  useEffect(() => {
+    if (selectedUser) {
+      const userRef = doc(db, "users", selectedUser.id);
+      const unsubscribe = onSnapshot(userRef, (doc) => {
+        if (doc.exists()) {
+          const lastSeenTimestamp = doc.data().lastSeen;
+          if (lastSeenTimestamp) {
+            setSelectedUserLastSeen(lastSeenTimestamp.toDate());
+          } else {
+            setSelectedUserLastSeen(null); // Handle no last seen case
+          }
+        }
+      });
+
+      return () => unsubscribe();
+    }
+  }, [selectedUser]);
+
+
+
+  // fetch lastseen
+  useEffect(() => {
+    const fetchLastSeen = async () => {
+      try {
+        if (selectedUser) {
+          const userRef = doc(db, "users", selectedUser.id);
+          const userDoc = await getDoc(userRef);
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            console.log("User data fetched:", data); // Debug
+            setSelectedUserLastSeen(data.lastSeen?.toDate());
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching lastSeen:", error);
+      }
+    };
+
+    fetchLastSeen();
+  }, [selectedUser]);
 
   // Fetch messages
   useEffect(() => {
@@ -110,28 +188,42 @@ const ChatRoom = () => {
   // Send a new message
   const sendMessage = async () => {
     if (message.trim() === "") return;
-
+  
     const currentUser = auth.currentUser;
     const recipientId = selectedUser?.id || "global";
-
+  
     const chatCollectionName = recipientId !== "global"
       ? getChatCollectionName(currentUser.uid, recipientId)
       : "messages_global";
-
+  
     try {
+      // Send message to Firestore
       await addDoc(collection(db, chatCollectionName), {
         text: message,
         createdAt: new Date(),
         userId: currentUser.uid,
         recipientId,
-        email: currentUser.email,
-        username: currentUser.displayName || "",
+        email: currentUser.email, // Include the email in the message document
       });
-      setMessage("");
+  
+      // After sending the message, update lastMessageTime for the current user and the selected user
+      await updateDoc(doc(db, "users", currentUser.uid), {
+        lastMessageTime: serverTimestamp(),
+      });
+  
+      if (selectedUser) {
+        await updateDoc(doc(db, "users", selectedUser.id), {
+          lastMessageTime: serverTimestamp(),
+        });
+      }
+  
+      setMessage("");  // Clear message input field
     } catch (error) {
-      console.error("Error sending message: ", error);
+      console.error("Error sending message:", error);
     }
   };
+  
+  
 
   // Scroll to the bottom whenever messages change
   useEffect(() => {
@@ -167,99 +259,105 @@ const ChatRoom = () => {
               />
             </Col>
             <Col xl={8} md={8} xxl={8} sm={8}>
-              {/* <h2 className="fw-bolder text-center">Chats</h2> */}
-              {/* <hr /> */}
+
               <div className="chat-box">
                 {/* chat header */}
-                <div className="chat-header d-flex justify-content-between align-items-center">
+                <div className="chat-header d-flex justify-content-between align-items-center px-3 py-2">
+                  {/* User Info Section */}
                   <div className="d-flex align-items-center">
-                    {/* Display avatar for individual or group */}
-                    {selectedUser ? (
-                      // Individual User
-                      <div className="user-avatar"
-                        style={{
-                          backgroundColor: "#ec8f9f", // Pink background
-                          borderRadius: "50%",
-                          width: "45px",
-                          height: "45px",
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                        }}>
-                        {selectedUser.firstName
-                          ? selectedUser.firstName.charAt(0).toUpperCase()  // First letter of first name
-                          : selectedUser.username.charAt(0).toUpperCase()}
-                      </div>
-                    ) : (
-                      // Group Chat
-                      <div className="user-avatar"
-                        style={{
-                          backgroundColor: "#ec8f9f", // Pink background
-                          borderRadius: "50%",
-                          width: "45px",
-                          height: "45px",
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                        }}>
-                        {"G"}
-                      </div>
-                    )}
-
-                    {/* Display user/group name */}
-                    <h4 className="ms-2">
+                    {/* Avatar */}
+                    <div
+                      className="user-avatar"
+                      style={{
+                        backgroundColor: "#ec8f9f", // Pink background
+                        borderRadius: "50%",
+                        width: "45px",
+                        height: "45px",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        fontSize: "1.2rem",
+                        fontWeight: "bold",
+                        color: "#fff", // White text
+                      }}
+                    >
                       {selectedUser
-                        ? `${selectedUser.firstName} ${selectedUser.lastName}`
-                        : "Group Chat"  // Change this as needed for group name
-                      }
-                    </h4>
+                        ? (selectedUser.firstName || selectedUser.username)
+                          .charAt(0)
+                          .toUpperCase()
+                        : "G"}
+                    </div>
+
+                    {/* User Name and Last Seen */}
+                    <div className="ms-2">
+                      <h4 className="mb-0">
+                        {selectedUser
+                          ? `${selectedUser.firstName} ${selectedUser.lastName || ""}`
+                          : "	Common Chat Group"}
+                      </h4>
+
+                      {/* Conditional display for Last Seen */}
+                      {selectedUser && (
+                        <p className="text-muted mb-0" style={{ fontSize: "0.9rem" }}>
+                          {selectedUserLastSeen
+                            ? `Last seen: ${new Date(selectedUserLastSeen).toLocaleString()}`
+                            : ""}
+                        </p>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Search Input */}
-                  <div className="d-flex gap-2 align-item-center">
-                    <IoIosSearch className="search-icon fs-1 m" />
-                    <Form.Control
-                      type="text"
-                      placeholder="Search messages"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}  // Handle search input
-                      className="search-input"
-                    />
-                    <span
-                      // onClick={() =>
-                        // selectedUser ? startVideoCall(selectedUser.id) : startVideoCall()
-                      // }
-                    >
-                      {/* Start {selectedUser ? "One-to-One" : "Group"} Video Call */}
-                      <FaVideo
-                        className="fs-2 text-white"
-                        style={{ cursor: "pointer" }}
+                  {/* Search and Video Call Section */}
+                  <div className="d-flex gap-3 align-items-center">
+                    {/* Search */}
+                    <div className="search-container d-flex align-items-center">
+                      <IoIosSearch className="search-icon fs-4 me-1" />
+                      <Form.Control
+                        type="text"
+                        placeholder="Search messages"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="search-input"
+                        style={{ maxWidth: "200px" }}
                       />
-                    </span>
+                    </div>
 
+                    {/* Video Call Icon */}
+                    <span
+                      onClick={() =>
+                        selectedUser ? startVideoCall(selectedUser.id) : startVideoCall()
+                      }
+                      style={{ cursor: "pointer" }}
+                    >
+                      <FaVideo className="fs-3 text-white" />
+                    </span>
                   </div>
                 </div>
+
+
                 {/* Chat Messages */}
                 <div className="chat-messages ">
-                  {filteredMessages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={`chat-message mb-2 ${msg.userId === auth.currentUser.uid ? "own-message" : "received-message"}`}
-                    >
-                      <div className="message-meta text-truncate">
-                        <span className="username">~ {msg.email}</span>
-                      </div>
-                      <div className="message-content">
-                        <p className="message-text">{msg.text}</p>
-                        <div className="message-time text-end">
-                          {new Date(msg.createdAt.toDate()).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                {filteredMessages.map((msg) => (
+  <div
+    key={msg.id}
+    className={`chat-message mb-2 ${msg.userId === auth.currentUser.uid ? "own-message" : "received-message"}`}
+  >
+    <div className="message-meta text-truncate">
+      {/* Display the email from the message document */}
+      <span className="username">~ {msg.email}</span>
+    </div>
+    <div className="message-content">
+      <p className="message-text">{msg.text}</p>
+      <div className="message-time text-end">
+        {new Date(msg.createdAt.toDate()).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })}
+      </div>
+    </div>
+  </div>
+))}
+
                   {/* Scroll to the bottom */}
                   <div ref={messagesEndRef} />
                 </div>
@@ -317,10 +415,6 @@ const ChatRoom = () => {
                 </div>
               </div>
             </Col>
-
-            {/* <Col xl={3} md={3} xxl={3} sm={12}>
-          <Profile currentUserProfile={currentUserProfile} />
-        </Col> */}
           </Row>
         </Container>
       )}

@@ -20,7 +20,7 @@ const VideoCall = ({ roomID, userName }) => {
     zp.joinRoom({
       container: videoContainerRef.current,
       scenario: { mode: ZegoUIKitPrebuilt.OneONoneCall },
-      showPreJoinView: false,
+      showPreJoinView: true,
     });
 
     // Generate room link for sharing
@@ -34,7 +34,10 @@ const VideoCall = ({ roomID, userName }) => {
 
     // Cleanup function on unmount
     return () => {
-      ZegoUIKitPrebuilt.destroy();
+      if (ZegoUIKitPrebuilt.destroy) {
+        ZegoUIKitPrebuilt.destroy();
+    }
+    
     };
   }, [roomID, userName]);
 
